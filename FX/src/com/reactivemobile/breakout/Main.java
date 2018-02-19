@@ -1,5 +1,6 @@
 package com.reactivemobile.breakout;
 
+import engine.BreakoutEngine;
 import javafx.animation.AnimationTimer;
 import javafx.application.Application;
 import javafx.scene.Group;
@@ -8,7 +9,6 @@ import javafx.scene.canvas.Canvas;
 import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.paint.Color;
 import javafx.stage.Stage;
-import engine.BreakoutEngine;
 
 public class Main extends Application {
 
@@ -23,6 +23,7 @@ public class Main extends Application {
 
     private static final double BLOCK_WIDTH = 5;
     private static final double BLOCK_HEIGHT = 5;
+    private static final int INITIAL_LIVES = 5;
 
     private BreakoutEngine engine;
 
@@ -48,10 +49,11 @@ public class Main extends Application {
                 PADDLE_HEIGHT,
                 BLOCK_WIDTH,
                 BLOCK_HEIGHT,
+                INITIAL_LIVES,
                 new BreakoutEngine.GameStateListener() {
                     @Override
                     public void ballMoved(double x, double y) {
-                        gc.clearRect(0, 0, WIDTH, HEIGHT - PADDLE_HEIGHT);
+                        clearCanvas(gc);
                         gc.setFill(Color.GREEN);
                         gc.fillOval(x - BALL_RADIUS, y - BALL_RADIUS, BALL_DIAMETER, BALL_DIAMETER);
                     }
@@ -70,11 +72,25 @@ public class Main extends Application {
                     @Override
                     public void ballMissedPaddle() {
                         clearPaddleRect();
-                        engine.reset();
+                        engine.resetBall();
+                    }
+
+                    @Override
+                    public void gameOver() {
+                        engine.pause();
+                        showGameOver(gc);
                     }
                 });
 
         scene.setOnMouseMoved(event -> engine.updatePaddleLocation((int) event.getX()));
+
+        scene.setOnMouseClicked(event -> {
+            if (!engine.getRunning()) {
+                clearCanvas(gc);
+                engine.resetGame();
+                engine.resume();
+            }
+        });
 
         new AnimationTimer() {
             @Override
@@ -82,5 +98,15 @@ public class Main extends Application {
                 engine.step();
             }
         }.start();
+    }
+
+    private void showGameOver(GraphicsContext gc) {
+        clearCanvas(gc);
+        gc.setFill(Color.RED);
+        gc.fillText("GAME OVER", WIDTH / 2, HEIGHT / 4);
+    }
+
+    private void clearCanvas(GraphicsContext gc) {
+        gc.clearRect(0, 0, WIDTH, HEIGHT - PADDLE_HEIGHT);
     }
 }
