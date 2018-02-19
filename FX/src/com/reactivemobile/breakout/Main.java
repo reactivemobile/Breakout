@@ -34,6 +34,12 @@ public class Main extends Application {
         root.getChildren().add(canvas);
         Scene scene = new Scene(root);
         primaryStage.setScene(scene);
+        primaryStage.show();
+
+        runGameEngine(scene, gc);
+    }
+
+    private void runGameEngine(Scene scene, GraphicsContext gc) {
 
         engine = new BreakoutEngine(WIDTH,
                 HEIGHT,
@@ -70,11 +76,6 @@ public class Main extends Application {
 
         scene.setOnMouseMoved(event -> engine.updatePaddleLocation((int) event.getX()));
 
-        primaryStage.show();
-        runGameEngine();
-    }
-
-    private void runGameEngine() {
         new AnimationTimer() {
             @Override
             public void handle(long now) {
@@ -83,9 +84,3 @@ public class Main extends Application {
         }.start();
     }
 }
-
-
-
-
-
-
