@@ -32,6 +32,10 @@ public class Main extends Application implements BreakoutEngine.GameStateListene
 
     private GraphicsContext gc;
 
+    public static void main(String[] args) {
+        launch(args);
+    }
+
     @Override
     public void start(Stage primaryStage) {
         Group root = new Group();
