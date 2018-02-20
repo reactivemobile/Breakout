@@ -12,9 +12,19 @@ apply plugin: 'kotlin'
 repositories {
     mavenCentral()
 }
+
 dependencies {
     compile "org.jetbrains.kotlin:kotlin-stdlib-jdk8:$kotlin_version"
 }
+
+sourceSets {
+    main {
+        java {
+            srcDirs 'src'
+        }
+    }
+}
+
 compileKotlin {
     kotlinOptions {
         jvmTarget = "1.8"
@@ -25,15 +35,3 @@ compileTestKotlin {
         jvmTarget = "1.8"
     }
 }
-
-task runApp(type: JavaExec) {
-    classpath = sourceSets.main.runtimeClasspath
-
-    main = 'Main'
-}
-
-jar {
-    manifest {}
-    from { configurations.compile.collect { it.isDirectory() ? it : zipTree(it) } }
-}
-
