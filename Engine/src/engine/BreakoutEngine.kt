@@ -1,22 +1,44 @@
 package engine
 
-class BreakoutEngine(var width: Double, var height: Double, val ballRadius: Double, val paddleWidth: Double, val paddleHeight: Double, val blockWidth: Double, val blockHeight: Double, val gameStateListener: GameStateListener) {
-    private var ball: Ball = Ball(width / 2, height / 2, 1.0, 1.0, width, height, ballRadius)
+class BreakoutEngine(var width: Double, var height: Double, val ballRadius: Double, val paddleWidth: Double, val paddleHeight: Double, val blockWidth: Double, val blockHeight: Double, val numLives: Int, val gameStateListener: GameStateListener) {
+    internal var ball: Ball = Ball(width / 2, height / 2, 1.0, 1.0, width, height, ballRadius)
     var paddleX: Double = 0.0
     var paddleY: Double = height - paddleHeight
 
-    fun reset() {
+    var running = true
+    var lives = numLives
+    fun resetBall() {
         ball.x = width / 2
         ball.y = height / 2
     }
 
+    fun resetGame() {
+        resetBall()
+        resetLives()
+    }
+
+    private fun resetLives() {
+        lives = numLives
+        notifyNumLivesChanged()
+    }
+
+    private fun notifyNumLivesChanged() {
+        gameStateListener.numberOfLivesChanged(lives)
+    }
+
+    fun resume() {
+        running = true
+    }
+
     fun step() {
-        gameStateListener.ballMoved(ball.x, ball.y)
-        ball.step()
+        if (running) {
+            gameStateListener.ballMoved(ball.x, ball.y)
+            ball.step()
+        }
     }
 
     fun updatePaddleLocation(value: Double) {
-        if ((value > 0.0 && value < (width - paddleWidth))) {
+        if (running && (value > 0.0 && value < (width - paddleWidth))) {
             paddleX = value
             gameStateListener.paddleMoved(value, paddleY)
         }
@@ -36,30 +58,19 @@ class BreakoutEngine(var width: Double, var height: Double, val ballRadius: Doub
                     velocityY = -velocityY
                 }
                 if (y >= height - radius) {
-                    gameStateListener.ballMissedPaddle()
+                    lives--
+                    notifyNumLivesChanged()
+                    if (lives == 0) {
+                        running = false
+                        gameStateListener.gameOver()
+                    } else {
+                        gameStateListener.ballMissedPaddle()
+                    }
                 }
             }
             if (y <= radius) {
                 velocityY = -velocityY
             }
-        }
-
-        override fun toString(): String {
-            val stringBuilder = StringBuilder()
-
-            val horizontalWall = "X".repeat(width.toInt())
-            stringBuilder.append("X${horizontalWall}X  Ball=($x, $y)").append('\n')
-            for (i in 0 until height.toInt()) {
-                val row = CharArray(width.toInt())
-                row.fill(' ')
-                if (i == y.toInt()) {
-                    row[x.toInt()] = 'o'
-                }
-
-                stringBuilder.append("X${row}X").append('\n')
-            }
-            stringBuilder.append("X${horizontalWall}X").append('\n')
-            return stringBuilder.toString()
         }
     }
 
@@ -67,6 +78,8 @@ class BreakoutEngine(var width: Double, var height: Double, val ballRadius: Doub
         fun ballMoved(x: Double, y: Double)
         fun paddleMoved(x: Double, y: Double)
         fun ballMissedPaddle()
+        fun numberOfLivesChanged(lives: Int)
+        fun gameOver()
     }
 }
 

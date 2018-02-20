@@ -1,5 +1,6 @@
 package com.reactivemobile.breakout;
 
+import engine.BreakoutEngine;
 import javafx.animation.AnimationTimer;
 import javafx.application.Application;
 import javafx.scene.Group;
@@ -8,12 +9,14 @@ import javafx.scene.canvas.Canvas;
 import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.paint.Color;
 import javafx.stage.Stage;
-import engine.BreakoutEngine;
 
-public class Main extends Application {
+public class Main extends Application implements BreakoutEngine.GameStateListener {
 
-    private static final double WIDTH = 200;
-    private static final double HEIGHT = 200;
+    private static final double GAME_WIDTH = 200;
+    private static final double GAME_HEIGHT = 200;
+
+    private static final double FOOTER_HEIGHT = 20;
+    private static final double CANVAS_HEIGHT = FOOTER_HEIGHT + GAME_HEIGHT;
 
     private static final double PADDLE_WIDTH = 50;
     private static final double PADDLE_HEIGHT = 5;
@@ -23,58 +26,48 @@ public class Main extends Application {
 
     private static final double BLOCK_WIDTH = 5;
     private static final double BLOCK_HEIGHT = 5;
+    private static final int INITIAL_LIVES = 5;
 
     private BreakoutEngine engine;
+
+    private GraphicsContext gc;
 
     @Override
     public void start(Stage primaryStage) {
         Group root = new Group();
-        Canvas canvas = new Canvas(WIDTH, HEIGHT);
-        GraphicsContext gc = canvas.getGraphicsContext2D();
+        Canvas canvas = new Canvas(GAME_WIDTH, CANVAS_HEIGHT);
+        gc = canvas.getGraphicsContext2D();
         root.getChildren().add(canvas);
         Scene scene = new Scene(root);
         primaryStage.setScene(scene);
         primaryStage.show();
 
-        runGameEngine(scene, gc);
+        runGameEngine(scene);
     }
 
-    private void runGameEngine(Scene scene, GraphicsContext gc) {
+    private void runGameEngine(Scene scene) {
 
-        engine = new BreakoutEngine(WIDTH,
-                HEIGHT,
+        engine = new BreakoutEngine(GAME_WIDTH,
+                GAME_HEIGHT,
                 BALL_RADIUS,
                 PADDLE_WIDTH,
                 PADDLE_HEIGHT,
                 BLOCK_WIDTH,
                 BLOCK_HEIGHT,
-                new BreakoutEngine.GameStateListener() {
-                    @Override
-                    public void ballMoved(double x, double y) {
-                        gc.clearRect(0, 0, WIDTH, HEIGHT - PADDLE_HEIGHT);
-                        gc.setFill(Color.GREEN);
-                        gc.fillOval(x - BALL_RADIUS, y - BALL_RADIUS, BALL_DIAMETER, BALL_DIAMETER);
-                    }
-
-                    @Override
-                    public void paddleMoved(double x, double y) {
-                        clearPaddleRect();
-                        gc.setFill(Color.BLUE);
-                        gc.fillRect(x, y, PADDLE_WIDTH, PADDLE_HEIGHT);
-                    }
-
-                    private void clearPaddleRect() {
-                        gc.clearRect(0, HEIGHT - PADDLE_HEIGHT, WIDTH, PADDLE_HEIGHT);
-                    }
-
-                    @Override
-                    public void ballMissedPaddle() {
-                        clearPaddleRect();
-                        engine.reset();
-                    }
-                });
+                INITIAL_LIVES,
+                this);
 
         scene.setOnMouseMoved(event -> engine.updatePaddleLocation((int) event.getX()));
+
+        scene.setOnMouseClicked(event -> {
+            if (!engine.getRunning()) {
+                clearCanvas();
+                engine.resetGame();
+                engine.resume();
+            }
+        });
+
+        numberOfLivesChanged(INITIAL_LIVES);
 
         new AnimationTimer() {
             @Override
@@ -82,5 +75,51 @@ public class Main extends Application {
                 engine.step();
             }
         }.start();
+    }
+
+    private void clearPaddleRect() {
+        gc.clearRect(0, GAME_HEIGHT - PADDLE_HEIGHT, GAME_WIDTH, PADDLE_HEIGHT);
+    }
+
+    private void clearCanvas() {
+        gc.clearRect(0, 0, GAME_WIDTH, GAME_HEIGHT - PADDLE_HEIGHT);
+    }
+
+    @Override
+    public void ballMoved(double x, double y) {
+        clearCanvas();
+        gc.setFill(Color.GREEN);
+        gc.fillOval(x - BALL_RADIUS, y - BALL_RADIUS, BALL_DIAMETER, BALL_DIAMETER);
+    }
+
+    @Override
+    public void paddleMoved(double x, double y) {
+        clearPaddleRect();
+        gc.setFill(Color.BLUE);
+        gc.fillRect(x, y, PADDLE_WIDTH, PADDLE_HEIGHT);
+    }
+
+    @Override
+    public void ballMissedPaddle() {
+        gc.setFill(Color.RED);
+        gc.fillRect(0, 0, GAME_WIDTH, GAME_HEIGHT);
+        clearPaddleRect();
+        engine.resetBall();
+    }
+
+    @Override
+    public void numberOfLivesChanged(int lives) {
+        gc.setFill(Color.PINK);
+        gc.fillRect(0, GAME_HEIGHT, GAME_WIDTH, FOOTER_HEIGHT);
+        gc.setFill(Color.BLACK);
+        gc.fillText("Lives: " + lives, 2, CANVAS_HEIGHT - 2);
+    }
+
+    @Override
+    public void gameOver() {
+        gc.setFill(Color.RED);
+        gc.fillRect(0, GAME_HEIGHT, GAME_WIDTH, FOOTER_HEIGHT);
+        gc.setFill(Color.WHITE);
+        gc.fillText("GAME OVER!", 2, CANVAS_HEIGHT - 2);
     }
 }
