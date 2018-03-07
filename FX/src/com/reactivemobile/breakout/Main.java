@@ -25,8 +25,8 @@ public class Main extends Application implements BreakoutEngine.GameStateListene
     private static final double BALL_RADIUS = 5;
     private static final double BALL_DIAMETER = BALL_RADIUS * 2;
 
-    private static final int BLOCK_ROWS = 5;
-    private static final int BLOCK_COLUMNS = 10;
+    private static final int BLOCK_ROWS = 3;
+    private static final int BLOCK_COLUMNS = 3;
     private static final int INITIAL_LIVES = 5;
 
     private BreakoutEngine engine;
@@ -139,7 +139,7 @@ public class Main extends Application implements BreakoutEngine.GameStateListene
                 colour = Color.BLUE;
                 break;
             case DESTROYED:
-                colour = Color.RED;
+                colour = Color.TRANSPARENT;
                 break;
         }
         gc.setFill(colour);

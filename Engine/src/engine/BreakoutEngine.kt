@@ -49,7 +49,7 @@ class BreakoutEngine(var width: Double, var height: Double, val ballRadius: Doub
 
     private fun stepBlocks() {
         for (block in blocks) {
-            println(block.toString())
+            //println(block.toString())
             block.checkHit(ball)
             gameStateListener.blockUpdated(block)
         }
@@ -92,11 +92,21 @@ class BreakoutEngine(var width: Double, var height: Double, val ballRadius: Doub
         }
 
         fun bounceHorizontal() {
+            println("bounceHorizontal")
             velocityX = -velocityX
         }
 
         fun bounceVertical() {
+            println("bounceVertical")
             velocityY = -velocityY
+        }
+
+        override fun hitHorizontal() {
+            bounceHorizontal()
+        }
+
+        override fun hitVertical() {
+            bounceVertical()
         }
     }
 
@@ -112,8 +122,8 @@ class BreakoutEngine(var width: Double, var height: Double, val ballRadius: Doub
     class Block(blockX: Double, blockY: Double, blockWidth: Double, blockHeight: Double, var blockState: BlockState) : Rectangle(blockX, blockY, blockWidth, blockHeight) {
         var beingHit = false
         fun checkHit(ball: Ball) {
-            println("hit = ${intersects(ball)} blockState = ${blockState.name}")
-            if (intersects(ball)) {
+            // println("hit = ${intersects(ball)} blockState = ${blockState.name}")
+            if (blockState != BlockState.DESTROYED && intersects(ball)) {
                 if (!beingHit) {
                     if (blockState == BlockState.NEW) {
                         blockState = BlockState.HIT
@@ -127,11 +137,6 @@ class BreakoutEngine(var width: Double, var height: Double, val ballRadius: Doub
                 beingHit = false
             }
         }
-
-        override fun toString(): String {
-            return "Block(x=$x, y=$y, gameWidth=$w, gameHeight=$h, blockState=$blockState)"
-        }
-
     }
 
     enum class BlockState {
@@ -143,7 +148,82 @@ class BreakoutEngine(var width: Double, var height: Double, val ballRadius: Doub
 
 open class Rectangle(var x: Double, var y: Double, val w: Double, val h: Double) {
     fun intersects(r: Rectangle): Boolean {
-        return x < r.x + r.w && x + w > r.x && y < r.y + r.h && y + h > r.y;
+
+        val hit = x < r.x + r.w
+                && x + w > r.x
+                && y < r.y + r.h
+                && y + h > r.y;
+
+        if (hit) {
+            // Get the intersection rectangle to find out which way to bounce.
+            val iRect = intersection(r)
+
+            println("Intersecton is $iRect")
+
+
+            if (x + w / 2 < iRect.x + iRect.w / 2) {
+                println("hitHorizontal")
+                r.hitHorizontal()
+            } else if (x + w / 2 > iRect.x + iRect.w / 2) {
+                println("hitHorizontal")
+                r.hitHorizontal()
+            } else if (y + h / 2 < iRect.y + iRect.h / 2) {
+                println("hitVertical")
+                r.hitVertical()
+            } else if (y + h / 2 > iRect.y + iRect.h / 2) {
+                println("hitVertical")
+                r.hitVertical()
+            }
+        }
+        return hit
+    }
+
+    open fun hitHorizontal() {
+
+    }
+
+    open fun hitVertical() {
+
+    }
+
+
+    fun intersection(r: Rectangle): Rectangle {
+        var tx1 = this.x
+        var ty1 = this.y
+        val rx1 = r.x
+        val ry1 = r.y
+        var tx2 = tx1
+        tx2 += this.w
+        var ty2 = ty1
+        ty2 += this.h
+        var rx2 = rx1
+        rx2 += r.w
+        var ry2 = ry1
+        ry2 += r.h
+        if (tx1 < rx1) tx1 = rx1
+        if (ty1 < ry1) ty1 = ry1
+        if (tx2 > rx2) tx2 = rx2
+        if (ty2 > ry2) ty2 = ry2
+        tx2 -= tx1.toLong()
+        ty2 -= ty1.toLong()
+        // tx2,ty2 will never overflow (they will never be
+        // larger than the smallest of the two source w,h)
+        // they might underflow, though...
+        if (tx2 < Integer.MIN_VALUE) tx2 = Integer.MIN_VALUE.toDouble()
+        if (ty2 < Integer.MIN_VALUE) ty2 = Integer.MIN_VALUE.toDouble()
+        return Rectangle(tx1, ty1, tx2, ty2)
+    }
+
+    override fun toString(): String {
+        return "Rectangle(x=$x, y=$y, w=$w, h=$h)"
+    }
+
+
+    enum class HitPlane {
+        NONE,
+        HORIZONTAL,
+        VERTICAL,
+        HORIZONTAL_AND_VERTICAL
     }
 }
 
