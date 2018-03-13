@@ -9,6 +9,7 @@ import javafx.scene.canvas.Canvas;
 import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.paint.Color;
 import javafx.stage.Stage;
+import org.jetbrains.annotations.NotNull;
 
 public class Main extends Application implements BreakoutEngine.GameStateListener {
 
@@ -24,8 +25,8 @@ public class Main extends Application implements BreakoutEngine.GameStateListene
     private static final double BALL_RADIUS = 5;
     private static final double BALL_DIAMETER = BALL_RADIUS * 2;
 
-    private static final double BLOCK_WIDTH = 5;
-    private static final double BLOCK_HEIGHT = 5;
+    private static final int BLOCK_ROWS = 3;
+    private static final int BLOCK_COLUMNS = 3;
     private static final int INITIAL_LIVES = 5;
 
     private BreakoutEngine engine;
@@ -56,8 +57,8 @@ public class Main extends Application implements BreakoutEngine.GameStateListene
                 BALL_RADIUS,
                 PADDLE_WIDTH,
                 PADDLE_HEIGHT,
-                BLOCK_WIDTH,
-                BLOCK_HEIGHT,
+                BLOCK_ROWS,
+                BLOCK_COLUMNS,
                 INITIAL_LIVES,
                 this);
 
@@ -125,5 +126,23 @@ public class Main extends Application implements BreakoutEngine.GameStateListene
         gc.fillRect(0, GAME_HEIGHT, GAME_WIDTH, FOOTER_HEIGHT);
         gc.setFill(Color.WHITE);
         gc.fillText("GAME OVER!", 2, CANVAS_HEIGHT - 2);
+    }
+
+    @Override
+    public void blockUpdated(@NotNull BreakoutEngine.Block block) {
+        Color colour = Color.BLACK;
+        switch (block.getBlockState()) {
+            case NEW:
+                colour = Color.GREEN;
+                break;
+            case HIT:
+                colour = Color.BLUE;
+                break;
+            case DESTROYED:
+                colour = Color.TRANSPARENT;
+                break;
+        }
+        gc.setFill(colour);
+        gc.fillRect(block.getX() + 1, block.getY() + 1, block.getW() - 2, block.getH() - 2);
     }
 }
