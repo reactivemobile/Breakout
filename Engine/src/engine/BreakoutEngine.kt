@@ -1,12 +1,21 @@
 package engine
 
-class BreakoutEngine(var width: Double, var height: Double, val ballRadius: Double, val paddleWidth: Double, val paddleHeight: Double, val blockColumns: Int, val blockRows: Int, val numLives: Int, val gameStateListener: GameStateListener) {
-    internal var ball: Ball = Ball(width / 2, height / 2, 1.0, 1.0, ballRadius)
+class BreakoutEngine(var width: Double,
+                     var height: Double,
+                     ballRadius: Double,
+                     val paddleWidth: Double,
+                     val paddleHeight: Double,
+                     val blockColumns: Int,
+                     blockRows: Int,
+                     val numLives: Int,
+                     val gameStateListener: GameStateListener) {
+
+    private var ball: Ball = Ball(width / 2, height / 2, 1.0, 1.0, ballRadius)
     var paddleX: Double = 0.0
     var paddleY: Double = height - paddleHeight
 
-    val blockWidth = width / blockColumns
-    val blockHeight = (width / 2) / blockRows
+    private val blockWidth = width / blockColumns
+    private val blockHeight = (width / 2) / blockRows
     var blocks: Array<Block> = Array(blockColumns * blockRows, { it -> Block((it % blockColumns).toDouble() * blockWidth, (it / blockColumns).toDouble() * blockHeight, blockWidth, blockHeight, BlockState.NEW) })
 
     var running = true
@@ -23,7 +32,7 @@ class BreakoutEngine(var width: Double, var height: Double, val ballRadius: Doub
     }
 
     private fun resetBlocks() {
-
+        // TODO
     }
 
     private fun resetLives() {
@@ -49,7 +58,6 @@ class BreakoutEngine(var width: Double, var height: Double, val ballRadius: Doub
 
     private fun stepBlocks() {
         for (block in blocks) {
-            //println(block.toString())
             block.checkHit(ball)
             gameStateListener.blockUpdated(block)
         }
@@ -92,12 +100,10 @@ class BreakoutEngine(var width: Double, var height: Double, val ballRadius: Doub
         }
 
         fun bounceHorizontal() {
-            println("bounceHorizontal")
             velocityX = -velocityX
         }
 
         fun bounceVertical() {
-            println("bounceVertical")
             velocityY = -velocityY
         }
 
@@ -122,7 +128,6 @@ class BreakoutEngine(var width: Double, var height: Double, val ballRadius: Doub
     class Block(blockX: Double, blockY: Double, blockWidth: Double, blockHeight: Double, var blockState: BlockState) : Rectangle(blockX, blockY, blockWidth, blockHeight) {
         var beingHit = false
         fun checkHit(ball: Ball) {
-            // println("hit = ${intersects(ball)} blockState = ${blockState.name}")
             if (blockState != BlockState.DESTROYED && intersects(ball)) {
                 if (!beingHit) {
                     if (blockState == BlockState.NEW) {
@@ -132,7 +137,6 @@ class BreakoutEngine(var width: Double, var height: Double, val ballRadius: Doub
                     }
                     beingHit = true;
                 }
-
             } else {
                 beingHit = false
             }
@@ -158,20 +162,13 @@ open class Rectangle(var x: Double, var y: Double, val w: Double, val h: Double)
             // Get the intersection rectangle to find out which way to bounce.
             val iRect = intersection(r)
 
-            println("Intersecton is $iRect")
-
-
             if (x + w / 2 < iRect.x + iRect.w / 2) {
-                println("hitHorizontal")
                 r.hitHorizontal()
             } else if (x + w / 2 > iRect.x + iRect.w / 2) {
-                println("hitHorizontal")
                 r.hitHorizontal()
             } else if (y + h / 2 < iRect.y + iRect.h / 2) {
-                println("hitVertical")
                 r.hitVertical()
             } else if (y + h / 2 > iRect.y + iRect.h / 2) {
-                println("hitVertical")
                 r.hitVertical()
             }
         }
@@ -179,15 +176,13 @@ open class Rectangle(var x: Double, var y: Double, val w: Double, val h: Double)
     }
 
     open fun hitHorizontal() {
-
     }
 
     open fun hitVertical() {
-
     }
 
 
-    fun intersection(r: Rectangle): Rectangle {
+    private fun intersection(r: Rectangle): Rectangle {
         var tx1 = this.x
         var ty1 = this.y
         val rx1 = r.x
@@ -204,8 +199,8 @@ open class Rectangle(var x: Double, var y: Double, val w: Double, val h: Double)
         if (ty1 < ry1) ty1 = ry1
         if (tx2 > rx2) tx2 = rx2
         if (ty2 > ry2) ty2 = ry2
-        tx2 -= tx1.toLong()
-        ty2 -= ty1.toLong()
+        tx2 -= tx1
+        ty2 -= ty1
         // tx2,ty2 will never overflow (they will never be
         // larger than the smallest of the two source w,h)
         // they might underflow, though...
@@ -216,14 +211,6 @@ open class Rectangle(var x: Double, var y: Double, val w: Double, val h: Double)
 
     override fun toString(): String {
         return "Rectangle(x=$x, y=$y, w=$w, h=$h)"
-    }
-
-
-    enum class HitPlane {
-        NONE,
-        HORIZONTAL,
-        VERTICAL,
-        HORIZONTAL_AND_VERTICAL
     }
 }
 

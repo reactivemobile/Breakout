@@ -144,6 +144,5 @@ public class Main extends Application implements BreakoutEngine.GameStateListene
         }
         gc.setFill(colour);
         gc.fillRect(block.getX() + 1, block.getY() + 1, block.getW() - 2, block.getH() - 2);
-
     }
 }
