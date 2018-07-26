@@ -10,5 +10,4 @@ To run the demo navigate to the root directory and run
 
 **TODO**
 
-Fix bouncing logic
-Add "Game Complete" logic and UI to handle this
+Edge cases
