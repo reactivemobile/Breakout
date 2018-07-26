@@ -25,8 +25,8 @@ public class Main extends Application implements BreakoutEngine.GameStateListene
     private static final double BALL_RADIUS = 5;
     private static final double BALL_DIAMETER = BALL_RADIUS * 2;
 
-    private static final int BLOCK_ROWS = 3;
-    private static final int BLOCK_COLUMNS = 3;
+    private static final int BLOCK_ROWS = 2;
+    private static final int BLOCK_COLUMNS = 2;
     private static final int INITIAL_LIVES = 5;
 
     private BreakoutEngine engine;
@@ -121,11 +121,19 @@ public class Main extends Application implements BreakoutEngine.GameStateListene
     }
 
     @Override
-    public void gameOver() {
+    public void gameLose() {
         gc.setFill(Color.RED);
         gc.fillRect(0, GAME_HEIGHT, GAME_WIDTH, FOOTER_HEIGHT);
         gc.setFill(Color.WHITE);
         gc.fillText("GAME OVER!", 2, CANVAS_HEIGHT - 2);
+    }
+
+    @Override
+    public void gameWin() {
+        gc.setFill(Color.ORANGE);
+        gc.fillRect(0, GAME_HEIGHT, GAME_WIDTH, FOOTER_HEIGHT);
+        gc.setFill(Color.WHITE);
+        gc.fillText("You Win!", 2, CANVAS_HEIGHT - 2);
     }
 
     @Override

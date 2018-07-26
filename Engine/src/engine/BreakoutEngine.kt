@@ -1,29 +1,25 @@
 package engine
 
-class BreakoutEngine(var width: Double,
-                     var height: Double,
+class BreakoutEngine(var canvasWidth: Double,
+                     var canvasHeight: Double,
                      ballRadius: Double,
                      val paddleWidth: Double,
                      val paddleHeight: Double,
-                     val blockColumns: Int,
+                     private val blockColumns: Int,
                      blockRows: Int,
-                     val numLives: Int,
-                     val gameStateListener: GameStateListener) {
+                     private val numLives: Int,
+                     private val gameStateListener: GameStateListener) {
 
-    private var ball: Ball = Ball(width / 2, height / 2, 1.0, 1.0, ballRadius)
-    var paddleX: Double = 0.0
-    var paddleY: Double = height - paddleHeight
-
-    private val blockWidth = width / blockColumns
-    private val blockHeight = (width / 2) / blockRows
-    var blocks: Array<Block> = Array(blockColumns * blockRows, { it -> Block((it % blockColumns).toDouble() * blockWidth, (it / blockColumns).toDouble() * blockHeight, blockWidth, blockHeight, BlockState.NEW) })
+    private var ball: Ball = Ball(canvasWidth / 2, canvasHeight / 2, 1.0, 1.0, ballRadius)
+    private var paddleX: Double = 0.0
+    private var paddleY: Double = canvasHeight - paddleHeight
+    private val blockWidth = canvasWidth / blockColumns
+    private val blockHeight = (canvasWidth / 2) / blockRows
+    private var blockCount = blockColumns * blockRows
+    private var blocks: Array<Block> = Array(blockCount, { it -> Block((it % blockColumns).toDouble() * blockWidth, (it / blockColumns).toDouble() * blockHeight, blockWidth, blockHeight, BlockState.NEW) })
 
     var running = true
-    var lives = numLives
-    fun resetBall() {
-        ball.x = width / 2
-        ball.y = width / 2
-    }
+    private var lives = numLives
 
     fun resetGame() {
         resetBall()
@@ -31,8 +27,15 @@ class BreakoutEngine(var width: Double,
         resetBlocks()
     }
 
+    fun resetBall() {
+        ball.x = canvasWidth / 2
+        ball.y = canvasWidth / 2
+    }
+
     private fun resetBlocks() {
-        // TODO
+        for (block in blocks) {
+            block.blockState = BlockState.NEW
+        }
     }
 
     private fun resetLives() {
@@ -46,6 +49,10 @@ class BreakoutEngine(var width: Double,
 
     fun resume() {
         running = true
+    }
+
+    private fun pause() {
+        running = false
     }
 
     fun step() {
@@ -64,34 +71,31 @@ class BreakoutEngine(var width: Double,
     }
 
     fun updatePaddleLocation(value: Double) {
-        if (running && (value > 0.0 && value < (width - paddleWidth))) {
+        if (running && (value > 0.0 && value < (canvasWidth - paddleWidth))) {
             paddleX = value
             gameStateListener.paddleMoved(value, paddleY)
         }
     }
 
-    inner class Ball(var ballX: Double, var ballY: Double, var velocityX: Double, var velocityY: Double, val radius: Double) : Rectangle(ballX, ballY, radius * 2, radius * 2) {
+    inner class Ball(ballX: Double,
+                     ballY: Double,
+                     var velocityX: Double,
+                     var velocityY: Double,
+                     private val radius: Double) : Rectangle(ballX, ballY, radius * 2, radius * 2) {
         fun step() {
             x += velocityX
             y += velocityY
 
-            if (x >= width - radius || x <= radius) {
+            if (x >= canvasWidth - radius || x <= radius) {
                 bounceHorizontal()
             }
 
-            if (y >= height - radius - paddleHeight) {
+            if (y + velocityY >= canvasHeight - radius - paddleHeight) {
                 if (x > paddleX && x < paddleX + paddleWidth) {
                     bounceVertical()
                 }
-                if (y >= height - radius) {
-                    lives--
-                    notifyNumLivesChanged()
-                    if (lives == 0) {
-                        running = false
-                        gameStateListener.gameOver()
-                    } else {
-                        gameStateListener.ballMissedPaddle()
-                    }
+                if (y + velocityY >= canvasHeight - radius) {
+                    handleBallMissedPaddle()
                 }
             }
             if (y <= radius) {
@@ -106,13 +110,16 @@ class BreakoutEngine(var width: Double,
         fun bounceVertical() {
             velocityY = -velocityY
         }
+    }
 
-        override fun hitHorizontal() {
-            bounceHorizontal()
-        }
-
-        override fun hitVertical() {
-            bounceVertical()
+    private fun handleBallMissedPaddle() {
+        lives--
+        notifyNumLivesChanged()
+        if (lives == 0) {
+            pause()
+            gameStateListener.gameLose()
+        } else {
+            gameStateListener.ballMissedPaddle()
         }
     }
 
@@ -122,25 +129,52 @@ class BreakoutEngine(var width: Double,
         fun blockUpdated(block: Block)
         fun ballMissedPaddle()
         fun numberOfLivesChanged(lives: Int)
-        fun gameOver()
+        fun gameLose()
+        fun gameWin()
     }
 
-    class Block(blockX: Double, blockY: Double, blockWidth: Double, blockHeight: Double, var blockState: BlockState) : Rectangle(blockX, blockY, blockWidth, blockHeight) {
-        var beingHit = false
+    inner class Block(blockX: Double, blockY: Double, blockWidth: Double, blockHeight: Double, var blockState: BlockState) : Rectangle(blockX, blockY, blockWidth, blockHeight) {
         fun checkHit(ball: Ball) {
-            if (blockState != BlockState.DESTROYED && intersects(ball)) {
-                if (!beingHit) {
-                    if (blockState == BlockState.NEW) {
-                        blockState = BlockState.HIT
-                    } else if (blockState == BlockState.HIT) {
-                        blockState = BlockState.DESTROYED
-                    }
-                    beingHit = true;
-                }
-            } else {
-                beingHit = false
+            if (blockState == BlockState.DESTROYED)
+                return
+
+            if (ball.x + ball.w + ball.velocityX > x
+                    && ball.x + ball.velocityX < x + w
+                    && ball.y + ball.h > y
+                    && ball.y < y + h) {
+                ball.bounceHorizontal()
+                hit()
+            }
+
+            if (ball.x + ball.w > x
+                    && ball.x < x + w
+                    && ball.y + ball.h + ball.velocityY > y
+                    && ball.y + ball.velocityY < y + h) {
+                ball.bounceVertical()
+                hit()
             }
         }
+
+        private fun hit() {
+            if (blockState == BlockState.NEW) {
+                blockState = BlockState.HIT
+            } else if (blockState == BlockState.HIT) {
+                blockState = BlockState.DESTROYED
+                blockCount--
+                if (blockCount == 0) {
+                    handleWin()
+                }
+            }
+        }
+
+        override fun toString(): String {
+            return "Block(x=$x, y=$y, gameWidth=$w, gameHeight=$h, blockState=$blockState)"
+        }
+    }
+
+    private fun handleWin() {
+        pause()
+        gameStateListener.gameWin()
     }
 
     enum class BlockState {
@@ -150,67 +184,5 @@ class BreakoutEngine(var width: Double,
     }
 }
 
-open class Rectangle(var x: Double, var y: Double, val w: Double, val h: Double) {
-    fun intersects(r: Rectangle): Boolean {
-
-        val hit = x < r.x + r.w
-                && x + w > r.x
-                && y < r.y + r.h
-                && y + h > r.y;
-
-        if (hit) {
-            // Get the intersection rectangle to find out which way to bounce.
-            val iRect = intersection(r)
-
-            if (x + w / 2 < iRect.x + iRect.w / 2) {
-                r.hitHorizontal()
-            } else if (x + w / 2 > iRect.x + iRect.w / 2) {
-                r.hitHorizontal()
-            } else if (y + h / 2 < iRect.y + iRect.h / 2) {
-                r.hitVertical()
-            } else if (y + h / 2 > iRect.y + iRect.h / 2) {
-                r.hitVertical()
-            }
-        }
-        return hit
-    }
-
-    open fun hitHorizontal() {
-    }
-
-    open fun hitVertical() {
-    }
-
-
-    private fun intersection(r: Rectangle): Rectangle {
-        var tx1 = this.x
-        var ty1 = this.y
-        val rx1 = r.x
-        val ry1 = r.y
-        var tx2 = tx1
-        tx2 += this.w
-        var ty2 = ty1
-        ty2 += this.h
-        var rx2 = rx1
-        rx2 += r.w
-        var ry2 = ry1
-        ry2 += r.h
-        if (tx1 < rx1) tx1 = rx1
-        if (ty1 < ry1) ty1 = ry1
-        if (tx2 > rx2) tx2 = rx2
-        if (ty2 > ry2) ty2 = ry2
-        tx2 -= tx1
-        ty2 -= ty1
-        // tx2,ty2 will never overflow (they will never be
-        // larger than the smallest of the two source w,h)
-        // they might underflow, though...
-        if (tx2 < Integer.MIN_VALUE) tx2 = Integer.MIN_VALUE.toDouble()
-        if (ty2 < Integer.MIN_VALUE) ty2 = Integer.MIN_VALUE.toDouble()
-        return Rectangle(tx1, ty1, tx2, ty2)
-    }
-
-    override fun toString(): String {
-        return "Rectangle(x=$x, y=$y, w=$w, h=$h)"
-    }
-}
+open class Rectangle(var x: Double, var y: Double, val w: Double, val h: Double)
 
