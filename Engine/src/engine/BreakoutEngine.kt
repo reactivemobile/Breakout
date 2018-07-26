@@ -51,7 +51,7 @@ class BreakoutEngine(var canvasWidth: Double,
         running = true
     }
 
-    private fun pause() {
+    fun pause() {
         running = false
     }
 

@@ -26,7 +26,7 @@ public class Main extends Application implements BreakoutEngine.GameStateListene
     private static final double BALL_DIAMETER = BALL_RADIUS * 2;
 
     private static final int BLOCK_ROWS = 2;
-    private static final int BLOCK_COLUMNS = 2;
+    private static final int BLOCK_COLUMNS = 4;
     private static final int INITIAL_LIVES = 5;
 
     private BreakoutEngine engine;
@@ -80,6 +80,8 @@ public class Main extends Application implements BreakoutEngine.GameStateListene
                 engine.step();
             }
         }.start();
+
+        engine.pause();
     }
 
     private void clearPaddleRect() {
@@ -93,14 +95,14 @@ public class Main extends Application implements BreakoutEngine.GameStateListene
     @Override
     public void ballMoved(double x, double y) {
         clearCanvas();
-        gc.setFill(Color.GREEN);
+        gc.setFill(Color.DODGERBLUE);
         gc.fillOval(x - BALL_RADIUS, y - BALL_RADIUS, BALL_DIAMETER, BALL_DIAMETER);
     }
 
     @Override
     public void paddleMoved(double x, double y) {
         clearPaddleRect();
-        gc.setFill(Color.BLUE);
+        gc.setFill(Color.DEEPSKYBLUE);
         gc.fillRect(x, y, PADDLE_WIDTH, PADDLE_HEIGHT);
     }
 
@@ -114,10 +116,10 @@ public class Main extends Application implements BreakoutEngine.GameStateListene
 
     @Override
     public void numberOfLivesChanged(int lives) {
-        gc.setFill(Color.PINK);
+        gc.setFill(Color.POWDERBLUE);
         gc.fillRect(0, GAME_HEIGHT, GAME_WIDTH, FOOTER_HEIGHT);
-        gc.setFill(Color.BLACK);
-        gc.fillText("Lives: " + lives, 2, CANVAS_HEIGHT - 2);
+        gc.setFill(Color.DARKBLUE);
+        gc.fillText("Lives: " + lives, 4, CANVAS_HEIGHT - 6);
     }
 
     @Override
@@ -125,15 +127,15 @@ public class Main extends Application implements BreakoutEngine.GameStateListene
         gc.setFill(Color.RED);
         gc.fillRect(0, GAME_HEIGHT, GAME_WIDTH, FOOTER_HEIGHT);
         gc.setFill(Color.WHITE);
-        gc.fillText("GAME OVER!", 2, CANVAS_HEIGHT - 2);
+        gc.fillText("GAME OVER!", 4, CANVAS_HEIGHT - 6);
     }
 
     @Override
     public void gameWin() {
-        gc.setFill(Color.ORANGE);
-        gc.fillRect(0, GAME_HEIGHT, GAME_WIDTH, FOOTER_HEIGHT);
         gc.setFill(Color.WHITE);
-        gc.fillText("You Win!", 2, CANVAS_HEIGHT - 2);
+        gc.fillRect(0, GAME_HEIGHT, GAME_WIDTH, FOOTER_HEIGHT);
+        gc.setFill(Color.BLACK);
+        gc.fillText("You Win!", 4, CANVAS_HEIGHT - 6);
     }
 
     @Override
@@ -141,10 +143,10 @@ public class Main extends Application implements BreakoutEngine.GameStateListene
         Color colour = Color.BLACK;
         switch (block.getBlockState()) {
             case NEW:
-                colour = Color.GREEN;
+                colour = Color.SLATEBLUE;
                 break;
             case HIT:
-                colour = Color.BLUE;
+                colour = Color.STEELBLUE;
                 break;
             case DESTROYED:
                 colour = Color.TRANSPARENT;
