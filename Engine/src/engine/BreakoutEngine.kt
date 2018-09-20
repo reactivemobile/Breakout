@@ -1,14 +1,14 @@
 package engine
 
-class BreakoutEngine(var canvasWidth: Double,
-                     var canvasHeight: Double,
-                     ballRadius: Double,
-                     val paddleWidth: Double,
-                     val paddleHeight: Double,
-                     private val blockColumns: Int,
-                     blockRows: Int,
-                     private val numLives: Int,
-                     private val gameStateListener: GameStateListener) {
+class BreakoutEngine @JvmOverloads constructor(var canvasWidth: Double,
+                                               var canvasHeight: Double,
+                                               private var ballRadius: Double = canvasWidth / 40,
+                                               val paddleWidth: Double = canvasWidth / 4,
+                                               val paddleHeight: Double = canvasHeight / 20,
+                                               private val blockColumns: Int = 4,
+                                               blockRows: Int = 4,
+                                               val numLives: Int = 5,
+                                               private val gameStateListener: GameStateListener) {
 
     private var ball: Ball = Ball(canvasWidth / 2, canvasHeight / 2, 1.0, 1.0, ballRadius)
     private var paddleX: Double = 0.0
@@ -16,7 +16,9 @@ class BreakoutEngine(var canvasWidth: Double,
     private val blockWidth = canvasWidth / blockColumns
     private val blockHeight = (canvasWidth / 2) / blockRows
     private var blockCount = blockColumns * blockRows
-    private var blocks: Array<Block> = Array(blockCount, { it -> Block((it % blockColumns).toDouble() * blockWidth, (it / blockColumns).toDouble() * blockHeight, blockWidth, blockHeight, BlockState.NEW) })
+    private var blocks: Array<Block> = createBlocks()
+
+    private fun createBlocks() = Array(blockCount) { it -> Block((it % blockColumns).toDouble() * blockWidth, (it / blockColumns).toDouble() * blockHeight, blockWidth, blockHeight, BlockState.NEW) }
 
     var running = true
     private var lives = numLives
@@ -57,7 +59,7 @@ class BreakoutEngine(var canvasWidth: Double,
 
     fun step() {
         if (running) {
-            gameStateListener.ballMoved(ball.x, ball.y)
+            gameStateListener.ballMoved(ball.x, ball.y, ballRadius)
             ball.step()
             stepBlocks()
         }
@@ -73,7 +75,7 @@ class BreakoutEngine(var canvasWidth: Double,
     fun updatePaddleLocation(value: Double) {
         if (running && (value > 0.0 && value < (canvasWidth - paddleWidth))) {
             paddleX = value
-            gameStateListener.paddleMoved(value, paddleY)
+            gameStateListener.paddleMoved(value, paddleY, paddleWidth, paddleHeight)
         }
     }
 
@@ -124,8 +126,8 @@ class BreakoutEngine(var canvasWidth: Double,
     }
 
     interface GameStateListener {
-        fun ballMoved(x: Double, y: Double)
-        fun paddleMoved(x: Double, y: Double)
+        fun ballMoved(x: Double, y: Double, radius: Double)
+        fun paddleMoved(x: Double, y: Double, w: Double, h: Double)
         fun blockUpdated(block: Block)
         fun ballMissedPaddle()
         fun numberOfLivesChanged(lives: Int)
