@@ -5,3 +5,10 @@
 .DS_Store
 /build
 /captures
+out/
+build/
+dist/
+Engine/build/
+Engine/out/
+FX/build/
+FX/out/
