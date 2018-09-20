@@ -8,29 +8,18 @@ import javafx.scene.Scene;
 import javafx.scene.canvas.Canvas;
 import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.paint.Color;
+import javafx.scene.text.TextAlignment;
 import javafx.stage.Stage;
 import org.jetbrains.annotations.NotNull;
 
 public class Main extends Application implements BreakoutEngine.GameStateListener {
 
-    private static final double GAME_WIDTH = 200;
-    private static final double GAME_HEIGHT = 200;
-
+    private static final double GAME_WIDTH = 240;
+    private static final double GAME_HEIGHT = 240;
     private static final double FOOTER_HEIGHT = 20;
     private static final double CANVAS_HEIGHT = FOOTER_HEIGHT + GAME_HEIGHT;
 
-    private static final double PADDLE_WIDTH = 50;
-    private static final double PADDLE_HEIGHT = 5;
-
-    private static final double BALL_RADIUS = 5;
-    private static final double BALL_DIAMETER = BALL_RADIUS * 2;
-
-    private static final int BLOCK_ROWS = 2;
-    private static final int BLOCK_COLUMNS = 4;
-    private static final int INITIAL_LIVES = 5;
-
     private BreakoutEngine engine;
-
     private GraphicsContext gc;
 
     public static void main(String[] args) {
@@ -51,19 +40,9 @@ public class Main extends Application implements BreakoutEngine.GameStateListene
     }
 
     private void runGameEngine(Scene scene) {
-
-        engine = new BreakoutEngine(GAME_WIDTH,
-                GAME_HEIGHT,
-                BALL_RADIUS,
-                PADDLE_WIDTH,
-                PADDLE_HEIGHT,
-                BLOCK_ROWS,
-                BLOCK_COLUMNS,
-                INITIAL_LIVES,
-                this);
+        engine = new BreakoutEngine(GAME_WIDTH, GAME_HEIGHT, this);
 
         scene.setOnMouseMoved(event -> engine.updatePaddleLocation((int) event.getX()));
-
         scene.setOnMouseClicked(event -> {
             if (!engine.getRunning()) {
                 clearCanvas();
@@ -72,38 +51,36 @@ public class Main extends Application implements BreakoutEngine.GameStateListene
             }
         });
 
-        numberOfLivesChanged(INITIAL_LIVES);
-
         new AnimationTimer() {
             @Override
             public void handle(long now) {
                 engine.step();
             }
         }.start();
-
+        showBottomMessage("Click to Start!");
         engine.pause();
     }
 
     private void clearPaddleRect() {
-        gc.clearRect(0, GAME_HEIGHT - PADDLE_HEIGHT, GAME_WIDTH, PADDLE_HEIGHT);
+        gc.clearRect(0, GAME_HEIGHT - engine.getPaddleHeight(), GAME_WIDTH, engine.getPaddleHeight());
     }
 
     private void clearCanvas() {
-        gc.clearRect(0, 0, GAME_WIDTH, GAME_HEIGHT - PADDLE_HEIGHT);
+        gc.clearRect(0, 0, GAME_WIDTH, GAME_HEIGHT - engine.getPaddleHeight());
     }
 
     @Override
-    public void ballMoved(double x, double y) {
+    public void ballMoved(double x, double y, double radius) {
         clearCanvas();
         gc.setFill(Color.DODGERBLUE);
-        gc.fillOval(x - BALL_RADIUS, y - BALL_RADIUS, BALL_DIAMETER, BALL_DIAMETER);
+        gc.fillOval(x - radius, y - radius, radius * 2, radius * 2);
     }
 
     @Override
-    public void paddleMoved(double x, double y) {
+    public void paddleMoved(double x, double y, double w, double h) {
         clearPaddleRect();
         gc.setFill(Color.DEEPSKYBLUE);
-        gc.fillRect(x, y, PADDLE_WIDTH, PADDLE_HEIGHT);
+        gc.fillRect(x, y, w, h);
     }
 
     @Override
@@ -116,26 +93,25 @@ public class Main extends Application implements BreakoutEngine.GameStateListene
 
     @Override
     public void numberOfLivesChanged(int lives) {
-        gc.setFill(Color.POWDERBLUE);
-        gc.fillRect(0, GAME_HEIGHT, GAME_WIDTH, FOOTER_HEIGHT);
-        gc.setFill(Color.DARKBLUE);
-        gc.fillText("Lives: " + lives, 4, CANVAS_HEIGHT - 6);
+        showBottomMessage("Lives: " + lives);
     }
 
     @Override
     public void gameLose() {
-        gc.setFill(Color.RED);
-        gc.fillRect(0, GAME_HEIGHT, GAME_WIDTH, FOOTER_HEIGHT);
-        gc.setFill(Color.WHITE);
-        gc.fillText("GAME OVER!", 4, CANVAS_HEIGHT - 6);
+        showBottomMessage("** Game Over - Click to restart **");
     }
 
     @Override
     public void gameWin() {
+        showBottomMessage("!! You Win !!");
+    }
+
+    private void showBottomMessage(String text) {
         gc.setFill(Color.WHITE);
         gc.fillRect(0, GAME_HEIGHT, GAME_WIDTH, FOOTER_HEIGHT);
         gc.setFill(Color.BLACK);
-        gc.fillText("You Win!", 4, CANVAS_HEIGHT - 6);
+        gc.setTextAlign(TextAlignment.CENTER);
+        gc.fillText(text, GAME_WIDTH / 2, CANVAS_HEIGHT - 6);
     }
 
     @Override
