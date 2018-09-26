@@ -1,6 +1,7 @@
 package com.reactivemobile.breakout;
 
 import engine.BreakoutEngine;
+import engine.GameStateListener;
 import javafx.animation.AnimationTimer;
 import javafx.application.Application;
 import javafx.scene.Group;
@@ -12,7 +13,7 @@ import javafx.scene.text.TextAlignment;
 import javafx.stage.Stage;
 import org.jetbrains.annotations.NotNull;
 
-public class Main extends Application implements BreakoutEngine.GameStateListener {
+public class Main extends Application implements GameStateListener {
 
     private static final double GAME_WIDTH = 240;
     private static final double GAME_HEIGHT = 240;
@@ -74,6 +75,9 @@ public class Main extends Application implements BreakoutEngine.GameStateListene
         clearCanvas();
         gc.setFill(Color.DODGERBLUE);
         gc.fillOval(x - radius, y - radius, radius * 2, radius * 2);
+
+        gc.setFill(Color.WHITE);
+        gc.fillOval(x - radius / 2, y - radius / 2, radius, radius);
     }
 
     @Override
