@@ -7,18 +7,23 @@ class BreakoutEngine @JvmOverloads constructor(var canvasWidth: Double,
                                                val paddleHeight: Double = canvasHeight / 20,
                                                private val blockColumns: Int = 4,
                                                blockRows: Int = 4,
-                                               val numLives: Int = 5,
+                                               private val numLives: Int = 5,
                                                private val gameStateListener: GameStateListener) {
 
-    private var ball: Ball = Ball(canvasWidth / 2, canvasHeight / 2, 1.0, 1.0, ballRadius)
-    private var paddleX: Double = 0.0
-    private var paddleY: Double = canvasHeight - paddleHeight
+    private val initialVelocity = -1.0
     private val blockWidth = canvasWidth / blockColumns
     private val blockHeight = (canvasWidth / 2) / blockRows
-    private var blockCount = blockColumns * blockRows
-    private var blocks: Array<Block> = createBlocks()
 
-    private fun createBlocks() = Array(blockCount) { it -> Block((it % blockColumns).toDouble() * blockWidth, (it / blockColumns).toDouble() * blockHeight, blockWidth, blockHeight, BlockState.NEW) }
+    private var ball: Ball = Ball(canvasWidth / 2,
+            canvasHeight / 2,
+            initialVelocity,
+            initialVelocity,
+            ballRadius)
+
+    private var paddleX: Double = 0.0
+    private var paddleY: Double = canvasHeight - paddleHeight
+    private var blockCount = blockColumns * blockRows
+    private var blocks = Array(blockCount) { it -> Block((it % blockColumns).toDouble() * blockWidth, (it / blockColumns).toDouble() * blockHeight, blockWidth, blockHeight, BlockState.NEW) }
 
     var running = true
     private var lives = numLives
@@ -31,7 +36,9 @@ class BreakoutEngine @JvmOverloads constructor(var canvasWidth: Double,
 
     fun resetBall() {
         ball.x = canvasWidth / 2
-        ball.y = canvasWidth / 2
+        ball.y = canvasHeight - paddleHeight - paddleHeight / 2
+        ball.velocityX = initialVelocity
+        ball.velocityY = initialVelocity
     }
 
     private fun resetBlocks() {
@@ -85,23 +92,50 @@ class BreakoutEngine @JvmOverloads constructor(var canvasWidth: Double,
                      var velocityY: Double,
                      private val radius: Double) : Rectangle(ballX, ballY, radius * 2, radius * 2) {
         fun step() {
+            moveBall()
+            checkBallLeftWallBounce()
+            checkBallHitOrMissPaddle()
+            checkBallTopBounce()
+        }
+
+        private fun moveBall() {
             x += velocityX
             y += velocityY
+        }
 
+        private fun checkBallLeftWallBounce() {
             if (x >= canvasWidth - radius || x <= radius) {
                 bounceHorizontal()
             }
+        }
 
+        private fun checkBallHitOrMissPaddle() {
             if (y + velocityY >= canvasHeight - radius - paddleHeight) {
                 if (x > paddleX && x < paddleX + paddleWidth) {
+                    checkAndSkewBall()
                     bounceVertical()
-                }
-                if (y + velocityY >= canvasHeight - radius) {
+                } else {
                     handleBallMissedPaddle()
                 }
             }
+        }
+
+        private fun checkBallTopBounce() {
             if (y <= radius) {
                 bounceVertical()
+            }
+        }
+
+        /**
+         * Change the ball x velocity if it hits the left or right edge of the paddle
+         */
+        private fun checkAndSkewBall() {
+            val halfPaddle = paddleWidth / 2
+            val centerOfPaddle = paddleX + halfPaddle
+            val diff = x - centerOfPaddle
+            val percentage = diff / halfPaddle
+            if (percentage > 0.5 || percentage < -0.5) {
+                velocityX = percentage
             }
         }
 
@@ -125,33 +159,27 @@ class BreakoutEngine @JvmOverloads constructor(var canvasWidth: Double,
         }
     }
 
-    interface GameStateListener {
-        fun ballMoved(x: Double, y: Double, radius: Double)
-        fun paddleMoved(x: Double, y: Double, w: Double, h: Double)
-        fun blockUpdated(block: Block)
-        fun ballMissedPaddle()
-        fun numberOfLivesChanged(lives: Int)
-        fun gameLose()
-        fun gameWin()
-    }
-
     inner class Block(blockX: Double, blockY: Double, blockWidth: Double, blockHeight: Double, var blockState: BlockState) : Rectangle(blockX, blockY, blockWidth, blockHeight) {
+
         fun checkHit(ball: Ball) {
             if (blockState == BlockState.DESTROYED)
                 return
 
-            if (ball.x + ball.w + ball.velocityX > x
-                    && ball.x + ball.velocityX < x + w
-                    && ball.y + ball.h > y
-                    && ball.y < y + h) {
+            val ballX = ball.x - ballRadius
+            val ballY = ball.y - ballRadius
+
+            if (ballX + ballRadius + ball.velocityX > x
+                    && ballX + ball.velocityX < x + w
+                    && ballY + ball.h > y
+                    && ballY < y + h) {
                 ball.bounceHorizontal()
                 hit()
             }
 
-            if (ball.x + ball.w > x
-                    && ball.x < x + w
-                    && ball.y + ball.h + ball.velocityY > y
-                    && ball.y + ball.velocityY < y + h) {
+            if (ballX + ball.w > x
+                    && ballX < x + w
+                    && ballY + ball.h + ball.velocityY > y
+                    && ballY + ball.velocityY < y + h) {
                 ball.bounceVertical()
                 hit()
             }
@@ -187,4 +215,14 @@ class BreakoutEngine @JvmOverloads constructor(var canvasWidth: Double,
 }
 
 open class Rectangle(var x: Double, var y: Double, val w: Double, val h: Double)
+
+interface GameStateListener {
+    fun ballMoved(x: Double, y: Double, radius: Double)
+    fun paddleMoved(x: Double, y: Double, w: Double, h: Double)
+    fun blockUpdated(block: BreakoutEngine.Block)
+    fun ballMissedPaddle()
+    fun numberOfLivesChanged(lives: Int)
+    fun gameLose()
+    fun gameWin()
+}
 
