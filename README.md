@@ -1,13 +1,7 @@
 # Breakout
-This is a Kotlin-driven engine for a breakout-style game.
+This is a simple JavaFX breakout clone using Kotlin to drive the game engine
 
-The game engine can be embedded in any JVM code and the aim of this project is to have both Android and JavaFx implementations.
-
-Included in the repository is a simple JavaFX UI using the Kotlin engine to drive the game.
+You must first checkout the corresponding [Kotlin game engine](https://github.com/reactivemobile/BreakoutEngine) in the same directory as this project.
 
 To run the demo navigate to the root directory and run 
 `./gradlew jfxRun`
-
-**TODO**
-
-Edge cases
